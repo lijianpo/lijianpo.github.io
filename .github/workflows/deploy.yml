@@ -1,0 +1,47 @@
+name: Deploy blog to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Check, build, and upload the static site
+        uses: withastro/action@v6
+        with:
+          node-version: 24
+          package-manager: pnpm@11.14.0
+          build-cmd: pnpm run check && pnpm run test:content && pnpm run build
+      - name: Verify the production site in a browser
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm run test:e2e
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

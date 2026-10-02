@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeading from '../../components/PageHeading.astro';
+import { getPosts } from '../../lib/blog';
+import { tagsWithCounts, tagUrl } from '../../lib/posts';
+const tags = tagsWithCounts(await getPosts());
+---
+<BaseLayout title="标签" description="从一个关键词开始，找到相关的记录与思考。">
+  <div class="page-container">
+    <PageHeading eyebrow="CONNECTED IDEAS" title="标签" description="从一个关键词开始，顺着好奇心读下去。" count={`${String(tags.length).padStart(2, '0')} 个标签`} />
+    <div class="tag-grid">{tags.map(({ name, count }) => <a class="tag-item" href={tagUrl(name)}><span><span class="tag-hash" aria-hidden="true">#</span>{name}</span><span class="tag-count">{count}<span aria-hidden="true">↗</span></span></a>)}</div>
+    {tags.length === 0 && <div class="empty-state"><p>文章发布后，标签会出现在这里。</p></div>}
+  </div>
+</BaseLayout>

@@ -1,0 +1,90 @@
+---
+import type { InferGetStaticPropsType } from 'astro';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
+import { getPosts } from '../../lib/blog';
+import { formatDate, postUrl, readingMinutes, tagUrl } from '../../lib/posts';
+import { site } from '../../site.config';
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post, index) => ({ params: { id: post.id }, props: { post, newer: posts[index - 1], older: posts[index + 1] } }));
+}
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { post, newer, older } = Astro.props;
+const { Content, headings } = await render(post);
+const { title, description, pubDate, updatedDate, tags, draft } = post.data;
+---
+<BaseLayout title={title} description={description} article={{ date: pubDate, updated: updatedDate, tags }} noindex={draft}>
+  <div class="article-container">
+    <a class="back-link" href="/">← 返回文章列表</a>
+    <article data-pagefind-body>
+      <header class="article-heading">
+        <div class="eyebrow"><span class="blue-square" aria-hidden="true"></span>WORDS & THOUGHTS</div>
+        {draft && <p class="draft-notice" data-pagefind-ignore>草稿预览 · 这篇文章不会发布到网站。公开仓库中的源文件仍可被查看。</p>}
+        <h1 data-pagefind-meta="title">{title}</h1>
+        <p class="article-description">{description}</p>
+        <div class="article-meta"><span>{site.author}</span><span class="meta-divider" aria-hidden="true">/</span><time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time><span class="meta-divider" aria-hidden="true">/</span><span>{readingMinutes(post.body ?? '')} 分钟阅读</span></div>
+        {updatedDate && <p class="updated-date">更新于 <time datetime={updatedDate.toISOString()}>{formatDate(updatedDate)}</time></p>}
+        <div class="post-tags">{tags.map((tag) => <a href={tagUrl(tag)} data-pagefind-filter="tag"><span aria-hidden="true">#</span>{tag}</a>)}</div>
+      </header>
+      <div class="article-content">
+        <TableOfContents headings={headings} />
+        <div class="prose"><Content /></div>
+      </div>
+      <footer class="article-end" data-pagefind-ignore><span class="end-mark" aria-hidden="true">∎</span><p>谢谢你读到这里。</p><a href="/rss.xml">通过 RSS 订阅后续文章 ↗</a></footer>
+    </article>
+    {(newer || older) && <nav class="adjacent-posts" aria-label="相邻文章">
+      {newer ? <a href={postUrl(newer.id)}><span>← 较新一篇</span><strong>{newer.data.title}</strong></a> : <span />}
+      {older ? <a href={postUrl(older.id)}><span>较早一篇 →</span><strong>{older.data.title}</strong></a> : <span />}
+    </nav>}
+    <a class="back-link article-back" href="/">← 查看全部文章</a>
+  </div>
+</BaseLayout>
+<script>
+  for (const pre of document.querySelectorAll<HTMLPreElement>('.prose pre')) {
+    const code = pre.querySelector('code');
+    if (!code) continue;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block';
+    const bar = document.createElement('div');
+    bar.className = 'code-toolbar';
+    const language = document.createElement('span');
+    language.textContent = pre.dataset.language || 'CODE';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = '复制代码';
+    button.setAttribute('aria-label', '复制代码');
+    const status = document.createElement('span');
+    status.className = 'sr-only';
+    status.setAttribute('role', 'status');
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(code.textContent ?? '');
+        button.textContent = '已复制 ✓';
+        status.textContent = '代码已复制到剪贴板';
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        button.textContent = '请手动复制';
+        status.textContent = '无法访问剪贴板，已选中代码，请手动复制';
+      }
+      window.setTimeout(() => { button.textContent = '复制代码'; }, 2500);
+    });
+    pre.before(wrapper);
+    bar.append(language, button, status);
+    wrapper.append(bar, pre);
+  }
+  for (const table of document.querySelectorAll('.prose table')) {
+    const scroll = document.createElement('div');
+    scroll.className = 'table-scroll';
+    scroll.tabIndex = 0;
+    scroll.setAttribute('role', 'region');
+    scroll.setAttribute('aria-label', '表格，可横向滚动');
+    table.before(scroll);
+    scroll.append(table);
+  }
+</script>

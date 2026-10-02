@@ -1,0 +1,8 @@
+---
+import { getPosts } from '../lib/blog';
+import { paginate } from '../lib/posts';
+import ListingLayout from '../layouts/ListingLayout.astro';
+const posts = await getPosts();
+const pages = paginate(posts);
+---
+<ListingLayout posts={pages[0]} current={1} total={pages.length} count={posts.length} />

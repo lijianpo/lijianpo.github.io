@@ -1,0 +1,30 @@
+{
+  "name": "lijianpo-blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.14.0",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "dev": "astro dev --host 0.0.0.0",
+    "check": "astro check",
+    "test:content": "tsx --test tests/content.test.ts",
+    "build": "astro build && node scripts/build-search.mjs && node scripts/check-build.mjs",
+    "preview": "astro preview --host 0.0.0.0",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/rss": "4.0.19",
+    "@astrojs/sitemap": "3.7.4",
+    "astro": "7.3.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.0.0",
+    "gray-matter": "4.0.3",
+    "pagefind": "1.5.2",
+    "tsx": "4.23.15",
+    "typescript": "^6.0.0"
+  }
+}

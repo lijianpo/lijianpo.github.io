@@ -1,0 +1,60 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../site.config';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  article?: { date: Date; updated?: Date; tags: string[] };
+  noindex?: boolean;
+}
+const { title, description = site.description, article, noindex = false } = Astro.props;
+const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const image = new URL('/social-card.png', Astro.site);
+const structuredData = article ? {
+  '@context': 'https://schema.org', '@type': 'BlogPosting', headline: title, description,
+  datePublished: article.date.toISOString(), dateModified: (article.updated ?? article.date).toISOString(),
+  author: { '@type': 'Person', name: site.author, url: new URL('/about/', Astro.site).href },
+  mainEntityOfPage: canonical.href, image: image.href,
+} : undefined;
+---
+<!doctype html>
+<html lang={site.language}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fafaf9" />
+    <meta name="color-scheme" content="light" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={site.author} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title={`${site.name} RSS`} href="/rss.xml" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={site.locale} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} — ${site.tagline}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {article && <meta property="article:published_time" content={article.date.toISOString()} />}
+    {article?.updated && <meta property="article:modified_time" content={article.updated.toISOString()} />}
+    {article?.tags.map((tag) => <meta property="article:tag" content={tag} />)}
+    {structuredData && <script type="application/ld+json" set:html={JSON.stringify(structuredData).replace(/</g, '\\u003c')} />}
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到正文</a>
+    <Header />
+    <main id="main" tabindex="-1"><slot /></main>
+    <Footer />
+  </body>
+</html>

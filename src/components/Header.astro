@@ -1,0 +1,29 @@
+---
+import { site } from '../site.config';
+import Icon from './Icon.astro';
+const pathname = Astro.url.pathname;
+const links = [
+  { href: '/', label: '文章', active: pathname === '/' || pathname.startsWith('/page/') || pathname.startsWith('/posts/') },
+  { href: '/tags/', label: '标签', active: pathname.startsWith('/tags/') },
+  { href: '/archives/', label: '归档', active: pathname.startsWith('/archives/') },
+  { href: '/about/', label: '关于', active: pathname.startsWith('/about/') },
+];
+---
+<header class="site-header">
+  <div class="header-inner">
+    <a class="wordmark" href="/" aria-label={`${site.name} 首页`}><span class="brand-symbol" aria-hidden="true">l<span>.</span></span>{site.name}<span class="brand-slash" aria-hidden="true">/</span></a>
+    <nav class="main-nav" aria-label="主导航">
+      {links.map((link) => <a href={link.href} aria-current={link.active ? 'page' : undefined}>{link.label}</a>)}
+    </nav>
+    <a class="search-link" href="/search/" aria-label="搜索文章" aria-current={pathname === '/search/' ? 'page' : undefined}><Icon name="search" /><span class="search-label">搜索</span><kbd aria-hidden="true">/</kbd></a>
+  </div>
+</header>
+<script>
+  document.addEventListener('keydown', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey || event.isComposing || target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    event.preventDefault();
+    if (window.location.pathname === '/search/') document.querySelector<HTMLInputElement>('#search-input')?.focus();
+    else window.location.href = '/search/';
+  });
+</script>

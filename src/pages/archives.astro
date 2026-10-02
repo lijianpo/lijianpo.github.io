@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeading from '../components/PageHeading.astro';
+import { getPosts } from '../lib/blog';
+import { formatDate, postUrl } from '../lib/posts';
+const posts = await getPosts();
+const years = [...new Set(posts.map((post) => formatDate(post.data.pubDate).slice(0, 4)))];
+---
+<BaseLayout title="归档" description="按时间整理的全部文章。每一篇，都是某个时刻留下的记录。">
+  <div class="page-container">
+    <PageHeading eyebrow="ALONG THE WAY" title="归档" description="每一篇，都是某个时刻留下的记录。" count={`${posts.length} 篇文章`} />
+    <div class="archives">{years.map((year) => <section class="archive-year"><h2>{year}<span>{posts.filter((post) => formatDate(post.data.pubDate).startsWith(year)).length} 篇</span></h2><ul>{posts.filter((post) => formatDate(post.data.pubDate).startsWith(year)).map((post) => <li><time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate).slice(5)}</time><a href={postUrl(post.id)}>{post.data.title}{post.data.draft && <span class="draft-badge">草稿</span>}<span aria-hidden="true">↗</span></a></li>)}</ul></section>)}</div>
+    {posts.length === 0 && <div class="empty-state"><p>时间线，从第一篇文章开始。</p></div>}
+  </div>
+</BaseLayout>

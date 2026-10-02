@@ -1,0 +1,16 @@
+---
+import type { InferGetStaticPropsType } from 'astro';
+import { getPosts } from '../../lib/blog';
+import { paginate } from '../../lib/posts';
+import ListingLayout from '../../layouts/ListingLayout.astro';
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  const pages = paginate(posts);
+  return pages.slice(1).map((items, index) => ({
+    params: { page: String(index + 2) },
+    props: { posts: items, current: index + 2, total: pages.length, count: posts.length },
+  }));
+}
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+---
+<ListingLayout {...Astro.props} />

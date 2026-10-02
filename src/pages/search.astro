@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeading from '../components/PageHeading.astro';
+import Icon from '../components/Icon.astro';
+import { getPosts } from '../lib/blog';
+const empty = (await getPosts(false)).length === 0;
+---
+<BaseLayout title="搜索" description="搜索博客中的文章、关键词和思考。" noindex>
+  <div class="page-container">
+    <PageHeading eyebrow="FIND A THOUGHT" title="搜索" description="想找些什么？试试一个关键词。" />
+    <form class="search-form" role="search" action="/search/" data-dev={import.meta.env.DEV} data-empty={empty}>
+      <label for="search-input" class="sr-only">搜索文章</label><Icon name="search" size={22} />
+      <input id="search-input" name="q" type="search" placeholder="搜索文章标题或正文…" autocomplete="off" enterkeyhint="search" aria-describedby="search-status" />
+      <button type="submit">搜索 <span aria-hidden="true">↵</span></button>
+    </form>
+    <p id="search-status" class="search-status" role="status" aria-live="polite">输入关键词，寻找一段记录。</p>
+    <noscript><p class="notice">站内搜索需要启用 JavaScript。你也可以前往<a href="/archives/">归档</a>浏览全部文章。</p></noscript>
+    <div id="search-results" aria-label="搜索结果"></div>
+    <div id="search-start" class="search-start"><span class="empty-symbol" aria-hidden="true">⌕</span><p>文字之间，总有新的连接。</p><span>支持中文、英文与正文搜索</span></div>
+    <button id="search-more" class="text-button" type="button" hidden>加载更多结果 ↓</button>
+  </div>
+</BaseLayout>
+<script src="../scripts/search.ts"></script>

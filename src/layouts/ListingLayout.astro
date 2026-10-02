@@ -1,0 +1,21 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+import PageHeading from '../components/PageHeading.astro';
+import PostList from '../components/PostList.astro';
+import Pagination from '../components/Pagination.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../site.config';
+interface Props { posts: CollectionEntry<'posts'>[]; current: number; total: number; count: number; }
+const { posts, current, total, count } = Astro.props;
+---
+<BaseLayout title={current > 1 ? `文章 · 第 ${current} 页` : undefined}>
+  <div class="page-container">
+    <PageHeading eyebrow="THE JOURNAL" title="文章" description={`${site.tagline}。把探索的过程，慢慢写下来。`} count={`${String(count).padStart(2, '0')} 篇记录`} />
+    <div class="list-toolbar"><span><span class="status-dot" aria-hidden="true"></span>全部文章</span><a href="/archives/">按时间归档 <Icon name="arrow" size={14} /></a></div>
+    <PostList posts={posts} />
+    <Pagination current={current} total={total} />
+    {posts.length > 0 && current === total && <p class="list-end"><span></span>记录还在继续<span></span></p>}
+    <a class="rss-note" href="/rss.xml"><div class="rss-note-icon"><Icon name="rss" size={19} /></div><div><strong>不必时常刷新。</strong><span>通过 RSS，让新的文章来找你。</span></div><Icon name="arrow" size={18} /></a>
+  </div>
+</BaseLayout>

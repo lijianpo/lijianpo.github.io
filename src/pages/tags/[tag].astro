@@ -1,0 +1,21 @@
+---
+import type { InferGetStaticPropsType } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeading from '../../components/PageHeading.astro';
+import PostList from '../../components/PostList.astro';
+import { getPosts } from '../../lib/blog';
+import { tagsWithCounts } from '../../lib/posts';
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return tagsWithCounts(posts).map(({ name }) => ({ params: { tag: name }, props: { tag: name, posts: posts.filter((post) => post.data.tags.includes(name)) } }));
+}
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { tag, posts } = Astro.props;
+---
+<BaseLayout title={`标签：${tag}`} description={`关于「${tag}」的文章、记录与思考。`}>
+  <div class="page-container">
+    <a class="back-link" href="/tags/">← 全部标签</a>
+    <PageHeading eyebrow="FILED UNDER" title={`# ${tag}`} description={`围绕「${tag}」的记录。`} count={`${posts.length} 篇文章`} />
+    <PostList posts={posts} />
+  </div>
+</BaseLayout>
