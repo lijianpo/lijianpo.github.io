@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#fafaf9"/><path d="M80 96h1040M80 532h1040" stroke="#dededb"/><rect x="80" y="65" width="8" height="8" fill="#3563e9"/><text x="104" y="75" font-family="monospace" font-size="16" letter-spacing="4" fill="#666974">THE JOURNAL</text><text x="76" y="300" font-family="monospace" font-size="104" font-weight="700" letter-spacing="-7" fill="#191b20">lijianpo<tspan fill="#3563e9">.</tspan></text><text x="84" y="378" font-family="sans-serif" font-size="32" fill="#686a72">技术、记录与思考</text><text x="80" y="568" font-family="monospace" font-size="19" fill="#686a72">lijianpo.github.io</text><path d="M1050 275h55m-20-20 20 20-20 20" fill="none" stroke="#3563e9" stroke-width="3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#fff"/>
+  <rect x="40" y="40" width="1120" height="550" rx="36" fill="#e8f0fe"/>
+  <circle cx="106" cy="106" r="12" fill="#4285f4"/><circle cx="135" cy="106" r="12" fill="#ea4335"/>
+  <circle cx="106" cy="135" r="12" fill="#fbbc04"/><circle cx="135" cy="135" r="12" fill="#34a853"/>
+  <text x="160" y="134" font-family="Arial, sans-serif" font-size="30" fill="#3c4043">The Journal</text>
+  <text x="90" y="305" font-family="Arial, sans-serif" font-size="108" letter-spacing="-5" fill="#202124">lijianpo<tspan fill="#4285f4">.</tspan></text>
+  <text x="96" y="380" font-family="sans-serif" font-size="36" fill="#465366">技术、记录与思考</text>
+  <text x="96" y="528" font-family="Arial, sans-serif" font-size="22" fill="#1967d2">lijianpo.github.io</text>
+  <circle cx="995" cy="180" r="74" fill="#fbbc04"/>
+  <rect x="771" y="250" width="248" height="188" rx="24" transform="rotate(-12 771 250)" fill="#4285f4"/>
+  <rect x="793" y="238" width="225" height="158" rx="18" transform="rotate(-12 793 238)" fill="#fff"/>
+  <path d="m868 280-25 27 25 17m63-63 26 17-26 28" stroke="#4285f4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1041" cy="431" r="47" fill="#ea4335"/>
+  <path d="M793 450a60 60 0 0 0 108 36" stroke="#34a853" stroke-width="26" stroke-linecap="round" fill="none"/>
+</svg>

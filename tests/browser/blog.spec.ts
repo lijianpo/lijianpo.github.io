@@ -1,9 +1,9 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import matter from 'gray-matter';
 import { site } from '../../src/site.config';
-import { formatDate, postUrl, visiblePosts } from '../../src/lib/posts';
+import { formatDate, postUrl, tagUrl, visiblePosts } from '../../src/lib/posts';
 
 // Read the current collection so adding articles or removing the starter does not break deployment.
 const contentDir = resolve('src/content/posts');
@@ -11,7 +11,7 @@ const entries = readdirSync(contentDir).filter((name) => name.endsWith('.md')).m
   const { data, content } = matter(readFileSync(resolve(contentDir, name), 'utf8'));
   return {
     id: name.slice(0, -3), body: content,
-    data: { title: String(data.title), pubDate: new Date(data.pubDate), tags: (data.tags ?? []) as string[], draft: data.draft === true },
+    data: { title: String(data.title), pubDate: new Date(data.pubDate), tags: (data.tags ?? []) as string[], draft: data.draft === true, cover: data.cover as string | undefined },
   };
 });
 const posts = visiblePosts(entries);
@@ -20,6 +20,147 @@ const drafts = entries.filter((post) => post.data.draft);
 const chinesePost = posts.find((post) => /[\p{Script=Han}]{4,8}/u.test(post.body));
 const tocPost = posts.find((post) => /^## /m.test(post.body));
 const codePost = posts.find((post) => /^```/m.test(post.body));
+
+async function expectListImagesOnLeft(page: Page) {
+  const width = page.viewportSize()!.width;
+  const expectedImageWidth = width <= 700 ? 96 : width <= 1000 ? 160 : 220;
+  const rows = await page.locator('.post-list > li').evaluateAll((items) => items.map((item) => {
+    const image = item.querySelector('.post-artwork-link')!.getBoundingClientRect();
+    const summary = item.querySelector('.post-summary')!.getBoundingClientRect();
+    return { imageWidth: image.width, imageHeight: image.height, imageRight: image.right, textLeft: summary.left, imageTop: image.top, textTop: summary.top };
+  }));
+  for (const row of rows) {
+    expect(row.imageWidth).toBeCloseTo(expectedImageWidth, 0);
+    expect(row.imageWidth / row.imageHeight).toBeCloseTo(1.5, 1);
+    expect(row.imageRight).toBeLessThan(row.textLeft);
+    expect(row.imageTop).toBeCloseTo(row.textTop, 0);
+  }
+}
+
+test('视图切换保留文章、支持键盘操作并跨刷新和分页记住选择', async ({ page }) => {
+  if (!first) { test.skip(true, '当前没有已发布文章'); return; }
+  await page.goto('/');
+  const listButton = page.getByRole('button', { name: '列表', exact: true });
+  const cardsButton = page.getByRole('button', { name: '卡片', exact: true });
+  await expect(listButton).toHaveAttribute('aria-pressed', 'true');
+  await expectListImagesOnLeft(page);
+  const originalLinks = await page.locator('.post-title-line a').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+  await page.locator('.post-list').evaluate((list) => { list.setAttribute('data-preserved-dom', 'true'); });
+  await cardsButton.focus();
+  await page.keyboard.press('Enter');
+  await expect(cardsButton).toHaveAttribute('aria-pressed', 'true');
+  await expect(listButton).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.post-list')).toHaveAttribute('data-preserved-dom', 'true');
+  expect(await page.locator('.post-title-line a').evaluateAll((links) => links.map((link) => link.getAttribute('href')))).toEqual(originalLinks);
+  await page.reload();
+  await expect(cardsButton).toHaveAttribute('aria-pressed', 'true');
+
+  if (posts.length > site.pageSize) {
+    await page.getByRole('link', { name: '下一页 →' }).click();
+    await expect(page).toHaveURL('/page/2/');
+    await expect(cardsButton).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.post-list > li')).toHaveCount(Math.min(site.pageSize, posts.length - site.pageSize));
+    await listButton.focus();
+    await page.keyboard.press('Space');
+    await expect(listButton).toHaveAttribute('aria-pressed', 'true');
+    await expectListImagesOnLeft(page);
+    await page.reload();
+    await expect(listButton).toHaveAttribute('aria-pressed', 'true');
+    await page.goBack();
+    await expect(page).toHaveURL('/');
+    await expect(listButton).toHaveAttribute('aria-pressed', 'true');
+    await expectListImagesOnLeft(page);
+  } else {
+    await listButton.click();
+  }
+  await page.locator('.post-title-line a').first().click();
+  await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '文章', exact: true }).click();
+  await expect(listButton).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('已保存的卡片视图在交互脚本运行前恢复', async ({ page }) => {
+  if (!first) { test.skip(true, '当前没有已发布文章'); return; }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.addInitScript(() => localStorage.setItem('blog-post-view', 'cards'));
+  // Astro can inline small modules, so pausing network scripts alone is insufficient.
+  await page.route('**/', async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replace(/<script\b[^>]*\btype=["']module["'][^>]*>[\s\S]*?<\/script>/g, '');
+    await route.fulfill({ response, body: html });
+  });
+  await page.route('**/*.js', (route) => route.abort());
+  await page.goto('/');
+  const image = await page.locator('.post-featured .post-artwork-link').boundingBox();
+  const text = await page.locator('.post-featured .post-summary').boundingBox();
+  expect(image!.x).toBeGreaterThan(text!.x);
+  await expect(page.getByRole('group', { name: '文章显示方式' })).toBeHidden();
+});
+
+test('存储不可用时仍可切换，未知偏好回退到列表', async ({ page }) => {
+  if (!first) { test.skip(true, '当前没有已发布文章'); return; }
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    try { localStorage.setItem('blog-post-view', 'unknown'); } catch { /* Another fixture may block storage. */ }
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: '列表', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expectListImagesOnLeft(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Storage is disabled', 'SecurityError'); } });
+  });
+  await page.reload();
+  await expect(page.getByRole('button', { name: '列表', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '卡片', exact: true }).click();
+  await expect(page.getByRole('button', { name: '卡片', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '列表', exact: true }).click();
+  await expectListImagesOnLeft(page);
+  expect(errors).toEqual([]);
+});
+
+test('文章独立封面在列表、卡片和标签页共用，未配置时显示插画', async ({ page }) => {
+  const covered = posts.slice(0, site.pageSize).find((post) => post.data.cover);
+  if (!covered) { test.skip(true, '首页没有配置封面的文章'); return; }
+  await page.goto('/');
+  const image = page.locator(`.post-artwork-link[href="${postUrl(covered.id)}"] img.post-cover`);
+  await image.scrollIntoViewIfNeeded();
+  await expect(image).toBeVisible();
+  await expect(image).toHaveAttribute('src', covered.data.cover!);
+  await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth)).toBeGreaterThan(0);
+  const fallback = posts.slice(0, site.pageSize).find((post) => !post.data.cover);
+  if (fallback) {
+    const thumbnail = page.locator(`.post-artwork-link[href="${postUrl(fallback.id)}"]`);
+    await expect(thumbnail.locator('img')).toHaveCount(0);
+    await expect(thumbnail.locator('svg')).toBeVisible();
+  }
+  await page.getByRole('button', { name: '卡片', exact: true }).click();
+  await image.scrollIntoViewIfNeeded();
+  await expect(image).toBeVisible();
+  await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth)).toBeGreaterThan(0);
+  if (covered.data.tags.length) {
+    await page.goto(tagUrl(covered.data.tags[0]));
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toHaveAttribute('src', covered.data.cover!);
+    await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth)).toBeGreaterThan(0);
+    await expect(page.locator('.post-list-switchable')).toHaveCount(0);
+    await expect(page.getByRole('group', { name: '文章显示方式' })).toHaveCount(0);
+  }
+});
+
+test('封面加载失败时恢复插画并保留图片空间', async ({ page }) => {
+  const covered = posts.slice(0, site.pageSize).find((post) => post.data.cover);
+  if (!covered) { test.skip(true, '首页没有配置封面的文章'); return; }
+  await page.route(`**${covered.data.cover}`, (route) => route.abort());
+  await page.goto('/');
+  const thumbnail = page.locator(`.post-artwork-link[href="${postUrl(covered.id)}"]`);
+  await thumbnail.scrollIntoViewIfNeeded();
+  await expect(thumbnail.locator('img')).toHaveAttribute('hidden', '');
+  await expect(thumbnail.locator('svg')).toBeVisible();
+  await expectListImagesOnLeft(page);
+  await page.getByRole('button', { name: '卡片', exact: true }).click();
+  await expect(thumbnail.locator('img')).toBeHidden();
+  await expect(thumbnail.locator('svg')).toBeVisible();
+});
 
 test('首页、中文标签与归档可导航到真实文章', async ({ page }) => {
   await page.goto('/');
@@ -135,11 +276,19 @@ for (const width of [320, 375, 768, 1440]) {
     page.on('pageerror', (error) => failures.push(error.message));
     page.on('response', (response) => { if (response.status() >= 400) failures.push(`${response.status()} ${response.url()}`); });
     const paths = ['/', '/tags/', '/archives/', '/about/', '/search/'];
+    if (posts.length > site.pageSize) paths.push('/page/2/');
     if (first) paths.push(postUrl(first.id));
     for (const path of paths) {
       await page.goto(path);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), path).toBeTruthy();
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      if (first && (path === '/' || path === '/page/2/')) {
+        await expectListImagesOnLeft(page);
+        await page.getByRole('button', { name: '卡片', exact: true }).click();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${path} 卡片模式`).toBeTruthy();
+        await page.getByRole('button', { name: '列表', exact: true }).click();
+        await expectListImagesOnLeft(page);
+      }
     }
     expect(failures).toEqual([]);
   });
@@ -162,5 +311,7 @@ test('禁用 JavaScript 时文章、导航、目录和 RSS 仍可用', async ({ 
   if (tocPost) await expect(page.getByRole('navigation', { name: '章节导航' })).toBeVisible();
   await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '文章', exact: true }).click();
   await expect(page.locator('.post-list > li')).toHaveCount(Math.min(posts.length, site.pageSize));
+  await expect(page.getByRole('group', { name: '文章显示方式' })).toBeHidden();
+  await expectListImagesOnLeft(page);
   await context.close();
 });

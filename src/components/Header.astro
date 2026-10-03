@@ -1,6 +1,7 @@
 ---
 import { site } from '../site.config';
 import Icon from './Icon.astro';
+import BrandMark from './BrandMark.astro';
 const pathname = Astro.url.pathname;
 const links = [
   { href: '/', label: '文章', active: pathname === '/' || pathname.startsWith('/page/') || pathname.startsWith('/posts/') },
@@ -11,11 +12,14 @@ const links = [
 ---
 <header class="site-header">
   <div class="header-inner">
-    <a class="wordmark" href="/" aria-label={`${site.name} 首页`}><span class="brand-symbol" aria-hidden="true">l<span>.</span></span>{site.name}<span class="brand-slash" aria-hidden="true">/</span></a>
+    <a class="wordmark" href="/" aria-label={`${site.name} 首页`}><BrandMark /><span>{site.name}</span><span class="brand-label">博客</span></a>
     <nav class="main-nav" aria-label="主导航">
       {links.map((link) => <a href={link.href} aria-current={link.active ? 'page' : undefined}>{link.label}</a>)}
     </nav>
-    <a class="search-link" href="/search/" aria-label="搜索文章" aria-current={pathname === '/search/' ? 'page' : undefined}><Icon name="search" /><span class="search-label">搜索</span><kbd aria-hidden="true">/</kbd></a>
+    <div class="header-actions">
+      <a class="search-link" href="/search/" aria-label="搜索文章" aria-current={pathname === '/search/' ? 'page' : undefined} title="搜索文章（/）"><Icon name="search" size={22} /></a>
+      <a class="subscribe-link" href="/rss.xml"><Icon name="rss" size={17} /><span>订阅博客</span></a>
+    </div>
   </div>
 </header>
 <script>

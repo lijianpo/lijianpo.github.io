@@ -1,0 +1,40 @@
+---
+interface Props { seed?: string; }
+const { seed = '' } = Astro.props;
+const writing = /markdown|writing|notes/.test(seed);
+---
+<svg class:list={['post-artwork', { 'artwork-writing': writing }]} viewBox="0 0 720 480" preserveAspectRatio="xMidYMid slice" fill="none" aria-hidden="true" focusable="false">
+  <rect width="720" height="480" fill={writing ? '#e6f4ea' : '#e8f0fe'} />
+  <circle cx="669" cy="53" r="167" fill={writing ? '#ceead6' : '#d2e3fc'} />
+  <circle cx="39" cy="460" r="133" fill={writing ? '#ceead6' : '#d2e3fc'} />
+  {writing ? <>
+    <rect x="163" y="102" width="371" height="298" rx="20" transform="rotate(-9 163 102)" fill="#34a853" />
+    <rect x="199" y="77" width="338" height="327" rx="18" transform="rotate(5 199 77)" fill="white" />
+    <g transform="rotate(5 199 77)">
+      <rect x="237" y="118" width="46" height="9" rx="4.5" fill="#4285f4" />
+      <text x="235" y="195" fill="#202124" font-family="Arial, sans-serif" font-size="46" font-weight="500" letter-spacing="-2">Make a note.</text>
+      <path d="M239 228h253M239 254h215M239 280h242M239 306h158" stroke="#dadce0" stroke-width="9" stroke-linecap="round" />
+      <rect x="235" y="344" width="94" height="17" rx="8.5" fill="#e8f0fe" />
+    </g>
+    <path d="m522 352 48-151 28 9-48 151-23 25Z" fill="#fbbc04" />
+    <path d="m527 386-5-34 28 9Z" fill="#202124" />
+    <circle cx="137" cy="127" r="28" fill="#ea4335" />
+  </> : <>
+    <circle cx="548" cy="317" r="94" fill="#ea4335" />
+    <path d="M113 137a69 69 0 0 1 138 0Z" fill="#fbbc04" transform="rotate(-24 182 137)" />
+    <rect x="156" y="131" width="402" height="264" rx="21" transform="rotate(-7 156 131)" fill="#4285f4" />
+    <g transform="rotate(-7 156 109)">
+      <rect x="156" y="109" width="402" height="264" rx="20" fill="white" />
+      <path d="M157 152h400" stroke="#e8eaed" stroke-width="2" />
+      <circle cx="181" cy="131" r="5" fill="#ea4335" />
+      <circle cx="199" cy="131" r="5" fill="#fbbc04" />
+      <circle cx="217" cy="131" r="5" fill="#34a853" />
+      <text x="199" y="244" fill="#202124" font-family="Arial, sans-serif" font-size="64" letter-spacing="-3">Hello,</text>
+      <text x="199" y="313" fill="#1a73e8" font-family="Arial, sans-serif" font-size="64" letter-spacing="-3">world.</text>
+      <path d="m461 267 22 18-22 18" stroke="#4285f4" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+    <path d="M116 344a56 56 0 0 0 99 39" stroke="#34a853" stroke-width="28" stroke-linecap="round" />
+    <path d="M585 121v30m-15-15h30" stroke="#4285f4" stroke-width="7" stroke-linecap="round" />
+    <circle cx="280" cy="425" r="9" fill="#fbbc04" />
+  </>}
+</svg>

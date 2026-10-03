@@ -1,0 +1,48 @@
+---
+import Icon from './Icon.astro';
+interface Props { controls: string; }
+const { controls } = Astro.props;
+---
+<div class="post-view-toggle" role="group" aria-label="文章显示方式" hidden>
+  <button type="button" data-post-view-button="list" aria-pressed="true" aria-controls={controls}>
+    <Icon name="list" size={18} /><span>列表</span>
+  </button>
+  <button type="button" data-post-view-button="cards" aria-pressed="false" aria-controls={controls}>
+    <Icon name="grid" size={18} /><span>卡片</span>
+  </button>
+</div>
+
+<script>
+  const toggle = document.querySelector<HTMLElement>('.post-view-toggle');
+  if (toggle) {
+    const root = document.documentElement;
+    const buttons = toggle.querySelectorAll<HTMLButtonElement>('button[data-post-view-button]');
+
+    function applyView(view: 'list' | 'cards') {
+      root.dataset.postView = view;
+      for (const button of buttons) {
+        button.setAttribute('aria-pressed', String(button.dataset.postViewButton === view));
+      }
+    }
+
+    function restoreView() {
+      let view: 'list' | 'cards' = root.dataset.postView === 'cards' ? 'cards' : 'list';
+      try {
+        view = localStorage.getItem('blog-post-view') === 'cards' ? 'cards' : 'list';
+      } catch { /* Keep the current selection if storage is blocked. */ }
+      applyView(view);
+    }
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const view = button.dataset.postViewButton === 'cards' ? 'cards' : 'list';
+        applyView(view);
+        try { localStorage.setItem('blog-post-view', view); } catch { /* Switching still works. */ }
+      });
+    }
+    restoreView();
+    toggle.hidden = false;
+    // A history navigation may restore an older document from the back/forward cache.
+    window.addEventListener('pageshow', restoreView);
+  }
+</script>

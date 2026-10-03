@@ -3,6 +3,7 @@ import type { InferGetStaticPropsType } from 'astro';
 import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
+import BrandMark from '../../components/BrandMark.astro';
 import { getPosts } from '../../lib/blog';
 import { formatDate, postUrl, readingMinutes, tagUrl } from '../../lib/posts';
 import { site } from '../../site.config';
@@ -20,11 +21,11 @@ const { title, description, pubDate, updatedDate, tags, draft } = post.data;
     <a class="back-link" href="/">← 返回文章列表</a>
     <article data-pagefind-body>
       <header class="article-heading">
-        <div class="eyebrow"><span class="blue-square" aria-hidden="true"></span>WORDS & THOUGHTS</div>
+        <div class="eyebrow">记录与思考</div>
         {draft && <p class="draft-notice" data-pagefind-ignore>草稿预览 · 这篇文章不会发布到网站。公开仓库中的源文件仍可被查看。</p>}
         <h1 data-pagefind-meta="title">{title}</h1>
         <p class="article-description">{description}</p>
-        <div class="article-meta"><span>{site.author}</span><span class="meta-divider" aria-hidden="true">/</span><time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time><span class="meta-divider" aria-hidden="true">/</span><span>{readingMinutes(post.body ?? '')} 分钟阅读</span></div>
+        <div class="article-meta"><span class="article-author"><BrandMark />{site.author}</span><time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time><span>{readingMinutes(post.body ?? '')} 分钟阅读</span></div>
         {updatedDate && <p class="updated-date">更新于 <time datetime={updatedDate.toISOString()}>{formatDate(updatedDate)}</time></p>}
         <div class="post-tags">{tags.map((tag) => <a href={tagUrl(tag)} data-pagefind-filter="tag"><span aria-hidden="true">#</span>{tag}</a>)}</div>
       </header>

@@ -2,12 +2,13 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import Icon from '../components/Icon.astro';
+import BrandMark from '../components/BrandMark.astro';
 import { site } from '../site.config';
 ---
 <BaseLayout title="关于" description={`你好，我是 ${site.author}。这里记录技术、日常与慢慢成形的想法。`}>
   <div class="page-container about-container">
     <PageHeading eyebrow="BEHIND THE WORDS" title="关于" description="在文字之外，简单认识一下。" />
-    <div class="about-intro"><div class="about-avatar" aria-hidden="true">l<span>.</span></div><div><h2>你好，我是 {site.author}。</h2><p>{site.tagline}。</p></div></div>
+    <div class="about-intro"><div class="about-avatar" aria-hidden="true"><BrandMark /></div><div><h2>你好，我是 {site.author}。</h2><p>{site.tagline}。</p></div></div>
     <div class="prose about-prose">
       <p>欢迎来到这个小小的个人博客。</p>
       <p>这里是一个存放想法的地方：探索技术时的发现，日常生活里的观察，以及那些还没想明白、但值得写下来的问题。</p>

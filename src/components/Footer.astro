@@ -1,13 +1,14 @@
 ---
 import { site } from '../site.config';
 import Icon from './Icon.astro';
+import BrandMark from './BrandMark.astro';
 ---
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="footer-note"><span class="tiny-cross" aria-hidden="true">+</span><span>保持好奇，持续记录。</span></div>
+    <div class="footer-top"><a class="wordmark" href="/" aria-label={`${site.name} 首页`}><BrandMark /><span>{site.name}</span></a><p class="footer-note">保持好奇，持续记录。</p><a class="footer-about" href="/about/">关于这个小站 <Icon name="arrow" size={18} /></a></div>
     <div class="footer-bottom">
       <span class="copyright">© {new Date().getFullYear()} {site.name}</span>
-      <div class="footer-links"><a href={site.github} target="_blank" rel="noopener noreferrer">GitHub <Icon name="external" size={12} /></a><a href="/rss.xml"><Icon name="rss" size={14} /> RSS</a><span class="built-with">Built with Astro</span></div>
+      <div class="footer-links"><a href={site.github} target="_blank" rel="noopener noreferrer">GitHub <Icon name="external" size={14} /></a><a href="/rss.xml"><Icon name="rss" size={16} /> RSS</a><a href="/archives/">文章归档</a></div>
     </div>
   </div>
 </footer>

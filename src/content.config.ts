@@ -7,6 +7,7 @@ const posts = defineCollection({
   schema: z.object({
     title: z.string().trim().min(1),
     description: z.string().trim().min(1),
+    cover: z.string().trim().regex(/^\/images\/[^?#]+$/, '封面请使用 /images/ 开头的本地图片路径').optional(),
     pubDate: z.coerce.date(),
     updatedDate: z.coerce.date().optional(),
     tags: z.array(z.string().trim().min(1)).default([]).transform((tags) => [...new Set(tags)]),
