@@ -4,14 +4,20 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.14.0",
-  "engines": { "node": ">=24 <25" },
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "astro dev --host 0.0.0.0",
     "check": "astro check",
-    "test:content": "tsx --test tests/content.test.ts",
+    "check:content": "tsx scripts/check-content.ts",
+    "new:post": "tsx scripts/new-post.ts",
+    "test:content": "tsx --test tests/content.test.ts tests/authoring.test.ts",
+    "test:assets": "tsx --test tests/assets.test.ts tests/pipeline.test.ts",
     "build": "astro build && node scripts/build-search.mjs && node scripts/check-build.mjs",
     "preview": "astro preview --host 0.0.0.0",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:live": "tsx scripts/check-live.ts"
   },
   "dependencies": {
     "@astrojs/rss": "4.0.19",
@@ -20,11 +26,18 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
+    "@astrojs/markdown-satteri": "0.4.2",
     "@playwright/test": "1.63.0",
+    "@types/mdast": "4.0.4",
     "@types/node": "^24.0.0",
     "gray-matter": "4.0.3",
     "pagefind": "1.5.2",
+    "parse5": "7.3.0",
+    "remark-parse": "11.0.0",
+    "sharp": "0.35.5",
     "tsx": "4.23.15",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "unified": "11.0.5",
+    "unist-util-visit": "5.1.0"
   }
 }

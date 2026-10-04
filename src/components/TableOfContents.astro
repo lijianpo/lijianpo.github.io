@@ -16,16 +16,24 @@ const headings = Astro.props.headings.filter((heading) => heading.depth === 2 ||
   sync();
   media.addEventListener('change', sync);
   const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
-  if (links.length && 'IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        for (const link of links) {
-          if (decodeURIComponent(link.hash.slice(1)) === entry.target.id) link.setAttribute('aria-current', 'location');
-          else link.removeAttribute('aria-current');
-        }
+  if (links.length) {
+    const sections = links.map((link) => ({ link, heading: document.getElementById(decodeURIComponent(link.hash.slice(1))) }));
+    let scheduled = false;
+    const update = () => {
+      scheduled = false;
+      const threshold = (document.querySelector('.site-header')?.getBoundingClientRect().height ?? 76) + 40;
+      let active = sections[0];
+      for (const section of sections) {
+        if (section.heading && section.heading.getBoundingClientRect().top <= threshold) active = section;
       }
-    }, { rootMargin: '-15% 0px -65% 0px' });
-    document.querySelectorAll('.prose h2, .prose h3').forEach((heading) => observer.observe(heading));
+      for (const { link } of sections) {
+        if (link === active.link) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      }
+    };
+    const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(update); } };
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    update();
   }
 </script>

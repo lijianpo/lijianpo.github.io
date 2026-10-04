@@ -1,20 +1,27 @@
 ---
 import PostArtwork from './PostArtwork.astro';
+import { getImageAsset, imageSrcset } from '../lib/image-assets';
 interface Props { seed: string; cover?: string; priority?: boolean; }
 const { seed, cover, priority = false } = Astro.props;
+const asset = cover ? await getImageAsset(cover).catch((error) => {
+  if (!import.meta.env.DEV) throw error;
+  return undefined;
+}) : undefined;
 ---
 <span class="post-thumbnail">
   <PostArtwork seed={seed} />
-  {cover && <img
+  {cover && <picture>
+    {asset?.variants.length ? <source type="image/webp" srcset={imageSrcset(asset)} sizes="(max-width: 700px) 96px, (max-width: 1000px) 160px, 220px" /> : null}
+    <img
     class="post-cover"
     src={cover}
     alt=""
-    width="720"
-    height="480"
+    width={asset?.width ?? 720}
+    height={asset?.height ?? 480}
     loading={priority ? 'eager' : 'lazy'}
     fetchpriority={priority ? 'high' : undefined}
     decoding="async"
-  />}
+  /></picture>}
 </span>
 
 <script>
@@ -23,5 +30,12 @@ const { seed, cover, priority = false } = Astro.props;
     const showFallback = () => { image.hidden = true; };
     image.addEventListener('error', showFallback, { once: true });
     if (image.complete && image.naturalWidth === 0) showFallback();
+    const source = image.parentElement?.querySelector('source');
+    const thumbnail = image.closest('.post-thumbnail');
+    if (source && thumbnail && 'ResizeObserver' in window) {
+      const resize = () => { source.sizes = `${Math.ceil(thumbnail.getBoundingClientRect().width)}px`; };
+      resize();
+      new ResizeObserver(resize).observe(thumbnail);
+    }
   }
 </script>

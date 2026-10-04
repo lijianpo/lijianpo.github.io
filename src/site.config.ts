@@ -1,4 +1,5 @@
 export const site = {
+  url: 'https://lijianpo.com',
   name: 'lijianpo',
   tagline: '技术、记录与思考',
   description: '技术、记录与思考。一个安静的角落，存放探索的过程、日常的观察，以及慢慢成形的想法。',

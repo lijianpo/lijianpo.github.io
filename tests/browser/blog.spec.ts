@@ -1,25 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import matter from 'gray-matter';
 import { site } from '../../src/site.config';
-import { formatDate, postUrl, tagUrl, visiblePosts } from '../../src/lib/posts';
+import { formatDate, postUrl, tagUrl } from '../../src/lib/posts';
 
-// Read the current collection so adding articles or removing the starter does not break deployment.
-const contentDir = resolve('src/content/posts');
-const entries = readdirSync(contentDir).filter((name) => name.endsWith('.md')).map((name) => {
-  const { data, content } = matter(readFileSync(resolve(contentDir, name), 'utf8'));
-  return {
-    id: name.slice(0, -3), body: content,
-    data: { title: String(data.title), pubDate: new Date(data.pubDate), tags: (data.tags ?? []) as string[], draft: data.draft === true, cover: data.cover as string | undefined },
-  };
-});
-const posts = visiblePosts(entries);
-const first = posts[0];
-const drafts = entries.filter((post) => post.data.draft);
-const chinesePost = posts.find((post) => /[\p{Script=Han}]{4,8}/u.test(post.body));
-const tocPost = posts.find((post) => /^## /m.test(post.body));
-const codePost = posts.find((post) => /^```/m.test(post.body));
+import { posts, first, drafts, chinesePost, tocPost, codePost } from './content';
 
 async function expectListImagesOnLeft(page: Page) {
   const width = page.viewportSize()!.width;
@@ -151,6 +134,7 @@ test('封面加载失败时恢复插画并保留图片空间', async ({ page }) 
   const covered = posts.slice(0, site.pageSize).find((post) => post.data.cover);
   if (!covered) { test.skip(true, '首页没有配置封面的文章'); return; }
   await page.route(`**${covered.data.cover}`, (route) => route.abort());
+  await page.route('**/_generated/images/**', (route) => route.abort());
   await page.goto('/');
   const thumbnail = page.locator(`.post-artwork-link[href="${postUrl(covered.id)}"]`);
   await thumbnail.scrollIntoViewIfNeeded();
@@ -228,7 +212,7 @@ test('生产网站、搜索、RSS 和地图均不泄漏草稿', async ({ page, r
     for (const draft of drafts) expect(body).not.toContain(postUrl(draft.id));
   }
   const rss = await request.get('/rss.xml');
-  if (first) expect(await rss.text()).toContain(`https://lijianpo.github.io${postUrl(first.id)}`);
+  if (first) expect(await rss.text()).toContain(`${site.url}${postUrl(first.id)}`);
 });
 
 test('代码复制、桌面目录和键盘搜索快捷键可用', async ({ page, context }) => {

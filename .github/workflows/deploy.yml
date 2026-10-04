@@ -25,10 +25,10 @@ jobs:
         with:
           node-version: 24
           package-manager: pnpm@11.14.0
-          build-cmd: pnpm run check && pnpm run test:content && pnpm run build
+          build-cmd: pnpm run check:content && pnpm run check && pnpm run test:content && pnpm run test:assets && pnpm run build
       - name: Verify the production site in a browser
         run: |
-          pnpm exec playwright install --with-deps chromium
+          pnpm exec playwright install --with-deps chromium webkit
           pnpm run test:e2e
 
   deploy:
@@ -45,3 +45,20 @@ jobs:
       - name: Publish to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  verify-live:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v6
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Verify the published revision and site content
+        env:
+          EXPECT_COMMIT: ${{ github.sha }}
+        run: pnpm run test:live

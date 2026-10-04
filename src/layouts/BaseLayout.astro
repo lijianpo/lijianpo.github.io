@@ -2,6 +2,7 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../site.config';
+import { getSocialImage, type SocialImage } from '../lib/social-images';
 import '../styles/global.css';
 
 interface Props {
@@ -9,11 +10,13 @@ interface Props {
   description?: string;
   article?: { date: Date; updated?: Date; tags: string[] };
   noindex?: boolean;
+  socialImage?: SocialImage;
 }
 const { title, description = site.description, article, noindex = false } = Astro.props;
 const pageTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-const image = new URL('/social-card.png', Astro.site);
+const socialImage = Astro.props.socialImage ?? await getSocialImage();
+const image = new URL(socialImage.url, Astro.site);
 const structuredData = article ? {
   '@context': 'https://schema.org', '@type': 'BlogPosting', headline: title, description,
   datePublished: article.date.toISOString(), dateModified: (article.updated ?? article.date).toISOString(),
@@ -42,10 +45,12 @@ const structuredData = article ? {
     <meta property="og:site_name" content={site.name} />
     <meta property="og:locale" content={site.locale} />
     <meta property="og:image" content={image} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={`${site.name} — ${site.tagline}`} />
+    <meta property="og:image:width" content={String(socialImage.width)} />
+    <meta property="og:image:height" content={String(socialImage.height)} />
+    <meta property="og:image:alt" content={socialImage.alt} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image:alt" content={socialImage.alt} />
     {article && <meta property="article:published_time" content={article.date.toISOString()} />}
     {article?.updated && <meta property="article:modified_time" content={article.updated.toISOString()} />}
     {article?.tags.map((tag) => <meta property="article:tag" content={tag} />)}

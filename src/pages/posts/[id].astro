@@ -7,6 +7,7 @@ import BrandMark from '../../components/BrandMark.astro';
 import { getPosts } from '../../lib/blog';
 import { formatDate, postUrl, readingMinutes, tagUrl } from '../../lib/posts';
 import { site } from '../../site.config';
+import { getSocialImage } from '../../lib/social-images';
 export async function getStaticPaths() {
   const posts = await getPosts();
   return posts.map((post, index) => ({ params: { id: post.id }, props: { post, newer: posts[index - 1], older: posts[index + 1] } }));
@@ -15,8 +16,9 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { post, newer, older } = Astro.props;
 const { Content, headings } = await render(post);
 const { title, description, pubDate, updatedDate, tags, draft } = post.data;
+const socialImage = await getSocialImage(post);
 ---
-<BaseLayout title={title} description={description} article={{ date: pubDate, updated: updatedDate, tags }} noindex={draft}>
+<BaseLayout title={title} description={description} article={{ date: pubDate, updated: updatedDate, tags }} noindex={draft} socialImage={socialImage}>
   <div class="article-container">
     <a class="back-link" href="/">← 返回文章列表</a>
     <article data-pagefind-body>
@@ -29,7 +31,7 @@ const { title, description, pubDate, updatedDate, tags, draft } = post.data;
         {updatedDate && <p class="updated-date">更新于 <time datetime={updatedDate.toISOString()}>{formatDate(updatedDate)}</time></p>}
         <div class="post-tags">{tags.map((tag) => <a href={tagUrl(tag)} data-pagefind-filter="tag"><span aria-hidden="true">#</span>{tag}</a>)}</div>
       </header>
-      <div class="article-content">
+      <div class:list={['article-content', { 'has-toc': headings.some((heading) => heading.depth === 2 || heading.depth === 3) }]}>
         <TableOfContents headings={headings} />
         <div class="prose"><Content /></div>
       </div>
