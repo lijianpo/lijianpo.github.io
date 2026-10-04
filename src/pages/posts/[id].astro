@@ -4,6 +4,7 @@ import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
 import BrandMark from '../../components/BrandMark.astro';
+import PerformanceChart from '../../components/PerformanceChart.astro';
 import { getPosts } from '../../lib/blog';
 import { formatDate, postUrl, readingMinutes, tagUrl } from '../../lib/posts';
 import { site } from '../../site.config';
@@ -33,7 +34,7 @@ const socialImage = await getSocialImage(post);
       </header>
       <div class:list={['article-content', { 'has-toc': headings.some((heading) => heading.depth === 2 || heading.depth === 3) }]}>
         <TableOfContents headings={headings} />
-        <div class="prose"><Content /></div>
+        <div class="prose"><Content />{post.data.performance && <PerformanceChart data={post.data.performance} />}</div>
       </div>
       <footer class="article-end" data-pagefind-ignore><span class="end-mark" aria-hidden="true">∎</span><p>谢谢你读到这里。</p><a href="/rss.xml">通过 RSS 订阅后续文章 ↗</a></footer>
     </article>

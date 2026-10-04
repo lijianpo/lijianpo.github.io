@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import matter from 'gray-matter';
 import { visiblePosts } from '../../src/lib/posts';
+import { postSchema } from '../../src/lib/content-schema';
 
 // Read the current collection so adding articles or removing the starter does not break deployment.
 const contentDir = resolve('src/content/posts');
@@ -9,7 +10,7 @@ export const entries = readdirSync(contentDir).filter((name) => name.endsWith('.
   const { data, content } = matter(readFileSync(resolve(contentDir, name), 'utf8'));
   return {
     id: name.slice(0, -3), body: content,
-    data: { title: String(data.title), description: String(data.description), pubDate: new Date(data.pubDate), tags: (data.tags ?? []) as string[], draft: data.draft === true, cover: data.cover as string | undefined },
+    data: postSchema.parse(data),
   };
 });
 export const posts = visiblePosts(entries);

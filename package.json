@@ -12,7 +12,7 @@
     "check": "astro check",
     "check:content": "tsx scripts/check-content.ts",
     "new:post": "tsx scripts/new-post.ts",
-    "test:content": "tsx --test tests/content.test.ts tests/authoring.test.ts",
+    "test:content": "tsx --test tests/content.test.ts tests/authoring.test.ts tests/performance.test.ts",
     "test:assets": "tsx --test tests/assets.test.ts tests/pipeline.test.ts",
     "build": "astro build && node scripts/build-search.mjs && node scripts/check-build.mjs",
     "preview": "astro preview --host 0.0.0.0",

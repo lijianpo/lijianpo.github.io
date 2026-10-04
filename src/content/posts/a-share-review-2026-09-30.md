@@ -4,6 +4,12 @@ description: '复盘2026年9月30日A股市场表现，记录昊华科技500股�
 pubDate: 2026-10-04
 tags: ['投资记录', 'A股', '昊华科技']
 draft: false
+performance:
+  label: '昊华科技持仓收益率'
+  basis: '按每股成本 45.00 元计算的账面浮动收益率，非账户整体收益率。'
+  points:
+    - date: 2026-09-30
+      returnPercent: -8.44
 ---
 
 2026 年 9 月 30 日，是国庆假期前最后一个交易日。A 股于 10 月 1 日至 7 日休市，10 月 8 日恢复交易。这篇记录以 9 月 30 日收盘为基准，回顾当天行情，也整理一下自己的持仓情况。[上交所休市安排](https://www.sse.com.cn/disclosure/announcement/general/c/c_20260915_10832273.shtml)
