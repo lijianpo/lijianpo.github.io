@@ -28,6 +28,12 @@
   .footer-about { display: flex; align-items: center; gap: 12px; margin-left: auto; color: var(--muted); font-size: 13px; }
   .footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 24px; }
   .copyright { color: var(--muted); font-size: 12px; }
+  .footer-identity { min-width: 0; }
+  .footer-build { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 6px; color: var(--muted); font-size: 12px; }
+  .footer-version { white-space: nowrap; }
+  .build-revision code { font-family: var(--mono); }
+  a.build-revision { text-decoration: underline; text-decoration-color: var(--line); }
+  .footer-build time { font-variant-numeric: tabular-nums; }
   .footer-links { display: flex; align-items: center; gap: 28px; font-size: 12px; color: var(--muted); }
   .footer-links a { display: flex; align-items: center; gap: 6px; }
 }
@@ -56,6 +62,8 @@
     .footer-note { font-size: 12px; }
     .footer-about { margin-left: 0; font-size: 12px; }
     .footer-bottom { flex-wrap: wrap; gap: 18px; }
+    .footer-build-separator { display: none; }
+    .footer-build-time { flex-basis: 100%; }
     .footer-links { gap: 24px; }
   }
   @media (max-width: 480px) {

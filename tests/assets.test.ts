@@ -70,10 +70,11 @@ test('中文长标题分享图可生成，标题变动更新地址，生产只�
   await getSocialImage({ id: 'private-draft', data: post.data }, root);
   const output = resolve(root, 'dist');
   await mkdir(output);
-  await publishAssets(root, output);
+  const buildInfo = { revision: 'a'.repeat(40), builtAt: '2026-10-04T12:30:00.000Z' };
+  await publishAssets(root, output, buildInfo);
   const files = await readdir(resolve(output, '_generated/social'));
   assert(files.some((file) => file.startsWith('published-')));
   assert(!files.some((file) => file.startsWith('private-draft-') || file.startsWith('long-title-')));
   assert((await readFile(resolve(output, 'social-card.png'))).length > 0);
-  assert.equal(typeof JSON.parse(await readFile(resolve(output, 'build-info.json'), 'utf8')).revision, 'string');
+  assert.deepEqual(JSON.parse(await readFile(resolve(output, 'build-info.json'), 'utf8')), buildInfo);
 });

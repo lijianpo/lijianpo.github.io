@@ -8,5 +8,6 @@ export const site = {
   locale: 'zh_CN',
   timeZone: 'Asia/Taipei',
   github: 'https://github.com/lijianpo',
+  repository: 'https://github.com/lijianpo/lijianpo.github.io',
   pageSize: 10,
 } as const;

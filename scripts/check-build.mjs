@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { resolve, relative, sep } from 'node:path';
 import { site } from '../src/site.config.ts';
 import { readSourcePosts } from '../src/lib/content-files.ts';
-import { attr } from '../src/lib/html.ts';
+import { attr, elements } from '../src/lib/html.ts';
 import { inspectPage, xmlLocations } from '../src/lib/site-verification.ts';
 
 const root = resolve('dist');
@@ -13,6 +13,10 @@ async function walk(dir) {
 }
 const files = await walk(root);
 const pages = new Map(await Promise.all(files.filter((file) => file.endsWith('.html')).map(async (file) => [file, await readFile(file, 'utf8')])));
+const buildInfo = JSON.parse(await readFile(resolve(root, 'build-info.json'), 'utf8'));
+assert(typeof buildInfo.revision === 'string' && buildInfo.revision, '缺少构建版本');
+assert(typeof buildInfo.builtAt === 'string' && Number.isFinite(Date.parse(buildInfo.builtAt)), '缺少有效的编译时间');
+assert.equal(new Date(buildInfo.builtAt).toISOString(), buildInfo.builtAt, '编译时间必须使用 UTC ISO 8601 格式');
 const source = await readSourcePosts();
 const drafts = source.filter((post) => post.data.draft);
 const published = source.filter((post) => !post.data.draft);
@@ -37,6 +41,18 @@ let links = 0;
 for (const [file, html] of pages) {
   const path = '/' + relative(root, file).replaceAll(sep, '/').replace(/index\.html$/, '');
   const { nodes, image } = inspectPage(html, path);
+  const footer = nodes.find((node) => attr(node, 'class')?.split(/\s+/).includes('footer-build'));
+  assert(footer, `${path}: 缺少页脚构建信息`);
+  const footerNodes = elements(footer);
+  const revision = footerNodes.find((node) => attr(node, 'data-revision') !== undefined);
+  const builtAt = footerNodes.find((node) => node.tagName === 'time');
+  assert(revision && builtAt, `${path}: 页脚缺少版本或编译时间`);
+  assert.equal(attr(revision, 'data-revision'), buildInfo.revision, `${path}: 页脚版本与构建信息不一致`);
+  assert.equal(attr(revision, 'title'), buildInfo.revision, `${path}: 未保留完整提交号`);
+  assert.equal(attr(builtAt, 'datetime'), buildInfo.builtAt, `${path}: 页脚编译时间与构建信息不一致`);
+  const commit = buildInfo.revision.match(/^([a-f0-9]{40})(-dirty)?$/i);
+  if (commit) assert.equal(attr(revision, 'href'), `${site.repository}/commit/${commit[1]}`, `${path}: 提交链接错误`);
+  else assert.equal(attr(revision, 'href'), undefined, `${path}: 本地版本不应生成提交链接`);
   const references = [image.href];
   for (const node of nodes) {
     // Canonical metadata is checked above; Astro's error page has no /404/ route.
@@ -66,5 +82,4 @@ for (const [file, html] of pages) {
 }
 if (published.length) assert(files.includes(resolve(root, 'pagefind/pagefind.js')), '未生成搜索脚本');
 assert(files.includes(resolve(root, '404.html')), '缺少 GitHub Pages 404 页面');
-assert(JSON.parse(await readFile(resolve(root, 'build-info.json'), 'utf8')).revision, '缺少构建版本');
 console.log(`构建检查通过：${pages.size} 个页面，${published.length} 篇文章，${drafts.length} 篇草稿已排除，${links} 个站内引用有效；SEO 域名为 ${site.url}。`);

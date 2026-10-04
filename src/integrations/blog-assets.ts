@@ -3,13 +3,13 @@ import type { MarkdownProcessor } from 'astro/markdown';
 import { satteri } from '@astrojs/markdown-satteri';
 import { parseFragment, serialize, defaultTreeAdapter } from 'parse5';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
 import { resolve, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assetCache, getImageAsset, imageSrcset, proseImageSizes } from '../lib/image-assets.ts';
 import { checkContent, imageReferences, readSourcePosts } from '../lib/content-files.ts';
 import { getSocialImage } from '../lib/social-images.ts';
 import { elements, attr, type HtmlElement } from '../lib/html.ts';
+import { createBuildInfo, type BuildInfo } from '../lib/build-info.ts';
 
 export async function transformImages(html: string, root: string): Promise<string> {
   const tree = parseFragment(html);
@@ -60,7 +60,7 @@ function imageProcessor(root: string): MarkdownProcessor {
   };
 }
 
-export async function publishAssets(root: string, output: string) {
+export async function publishAssets(root: string, output: string, buildInfo: BuildInfo) {
   const posts = (await readSourcePosts(root)).filter((post) => !post.data.draft);
   const files = new Map<string, string>();
   const defaultCard = await getSocialImage(undefined, root);
@@ -80,28 +80,27 @@ export async function publishAssets(root: string, output: string) {
     await mkdir(dirname(target), { recursive: true });
     await copyFile(source, target);
   }
-  let revision = process.env.GITHUB_SHA ?? 'local';
-  if (revision === 'local') {
-    try {
-      revision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-      if (execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim()) revision += '-dirty';
-    } catch { /* Exported source trees can be built without Git. */ }
-  }
-  await writeFile(resolve(output, 'build-info.json'), JSON.stringify({ revision }) + '\n');
+  await writeFile(resolve(output, 'build-info.json'), JSON.stringify(buildInfo) + '\n');
 }
 
 export default function blogAssets(): AstroIntegration {
   let root: string;
+  let buildInfo: BuildInfo;
   return {
     name: 'blog-assets',
     hooks: {
       'astro:config:setup': async ({ config, command, updateConfig, logger }) => {
         root = fileURLToPath(config.root);
+        // One snapshot is shared by every rendered page and the published metadata.
+        buildInfo = createBuildInfo(root);
         if (command === 'build') {
           const { warnings } = await checkContent(root);
           for (const warning of warnings) logger.warn(warning);
         }
-        updateConfig({ markdown: { processor: imageProcessor(root) } });
+        updateConfig({
+          markdown: { processor: imageProcessor(root) },
+          vite: { define: { __BLOG_BUILD_INFO__: JSON.stringify(buildInfo) } },
+        });
       },
       'astro:server:setup': async ({ server }) => {
         const defaultCard = await getSocialImage(undefined, root);
@@ -119,7 +118,7 @@ export default function blogAssets(): AstroIntegration {
           } catch { response.statusCode = 404; response.end(); }
         });
       },
-      'astro:build:done': async ({ dir }) => { await publishAssets(root, fileURLToPath(dir)); },
+      'astro:build:done': async ({ dir }) => { await publishAssets(root, fileURLToPath(dir), buildInfo); },
     },
   };
 }

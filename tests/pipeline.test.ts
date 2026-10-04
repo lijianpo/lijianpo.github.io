@@ -46,11 +46,15 @@ test('真实构建刷新未改动 Markdown 的图片尺寸和哈希；删除文�
     .find((node) => node.tagName === 'img' && attr(node, 'alt') === '照片')!;
   await photo(1000, 500);
   await build();
+  const firstBuild = JSON.parse(await readFile(resolve(root, 'dist/build-info.json'), 'utf8'));
   assert.equal(attr(await image(), 'height'), '500');
   const firstAssets = await readdir(resolve(root, 'dist/_generated/images'));
   assert(firstAssets.length > 0);
   await photo(800, 600);
   await build();
+  const secondBuild = JSON.parse(await readFile(resolve(root, 'dist/build-info.json'), 'utf8'));
+  assert.equal(secondBuild.revision, firstBuild.revision, '未提交代码时构建版本不应改变');
+  assert(Date.parse(secondBuild.builtAt) > Date.parse(firstBuild.builtAt), '重新构建未更新编译时间');
   assert.equal(attr(await image(), 'width'), '800');
   assert.equal(attr(await image(), 'height'), '600');
   const secondAssets = await readdir(resolve(root, 'dist/_generated/images'));
