@@ -1,0 +1,58 @@
+@layer components {
+  .prose .holdings-snapshot { margin: 30px 0; overflow: hidden; border: 1px solid #dfe4ea; border-radius: 14px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.5; box-shadow: 0 4px 18px #20212406; }
+  .holdings-caption { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #edf0f3; }
+  .holdings-title { position: relative; padding: 16px 0; font-size: 17px; font-weight: 600; }
+  .holdings-title::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 3px; border-radius: 3px 3px 0 0; background: var(--blue); }
+  .holdings-caption time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .holdings-summary { display: grid; grid-template-columns: 1.2fr 1fr .85fr; align-items: end; gap: 20px; margin: 0; padding: 26px 24px; background: linear-gradient(110deg, #f7f9fc, #fff); }
+  .holdings-summary dt { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  .holdings-summary dd { margin: 0; font-size: 25px; font-weight: 500; letter-spacing: -.6px; white-space: nowrap; }
+  .holdings-market-value dd { font-size: 32px; line-height: 1.3; letter-spacing: -1px; }
+  .holdings-percent { margin-left: 2px; font-size: .65em; }
+  .holdings-table { overflow-x: auto; }
+  .holdings-snapshot .table-scroll { margin: 0; }
+  .prose .holdings-snapshot table { width: 100%; margin: 0; table-layout: fixed; font-size: 14px; line-height: 1.5; }
+  .prose .holdings-snapshot th { background: #f5f7fa; color: var(--muted); font-size: 12px; font-weight: 400; }
+  .prose .holdings-snapshot th, .prose .holdings-snapshot td { padding: 12px; text-align: right; border-bottom-color: #edf0f3; white-space: nowrap; }
+  .prose .holdings-snapshot th:first-child, .prose .holdings-snapshot td:first-child { width: 32%; padding-left: 24px; text-align: left; }
+  .prose .holdings-snapshot th:nth-child(2) { width: 16%; }
+  .prose .holdings-snapshot th:nth-child(3) { width: 23%; }
+  .prose .holdings-snapshot th:last-child, .prose .holdings-snapshot td:last-child { width: 29%; padding-right: 24px; }
+  .prose .holdings-snapshot td { padding-top: 18px; padding-bottom: 18px; }
+  .prose .holdings-snapshot tr:last-child td { border-bottom: 0; }
+  .holding-primary, .holding-secondary { display: block; }
+  .holding-primary { font-size: 16px; font-weight: 500; }
+  .holding-secondary { margin-top: 5px; color: var(--muted); font-size: 12px; }
+  .holdings-snapshot [data-trend='gain'] { color: var(--gain); }
+  .holdings-snapshot [data-trend='loss'] { color: var(--loss); }
+  .holdings-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 12px 24px; border-top: 1px solid #edf0f3; color: var(--muted); font-size: 11px; }
+  .holdings-footer b { margin-left: 6px; color: var(--ink); font-weight: 400; }
+}
+
+@layer responsive {
+  @media (max-width: 600px) {
+    .holdings-summary { grid-template-columns: 1fr 1fr; gap: 20px 12px; padding: 20px; }
+    .holdings-market-value { grid-column: 1 / -1; }
+    .holdings-summary dt { margin-bottom: 5px; font-size: 11px; }
+    .holdings-summary dd { font-size: 24px; }
+    .holdings-market-value dd { font-size: 34px; }
+  }
+  @media (max-width: 480px) {
+    .prose .holdings-snapshot { border-radius: 12px; }
+    .holdings-caption { padding: 0 14px; }
+    .holdings-title { padding: 13px 0; font-size: 16px; }
+    .holdings-caption time { font-size: 10px; }
+    .holdings-summary { padding: 20px 14px; }
+    .prose .holdings-snapshot th, .prose .holdings-snapshot td { padding: 12px 5px; }
+    .prose .holdings-snapshot th { font-size: 10px; }
+    .prose .holdings-snapshot th:first-child, .prose .holdings-snapshot td:first-child { width: 31%; padding-left: 12px; }
+    .prose .holdings-snapshot th:nth-child(2) { width: 14%; }
+    .prose .holdings-snapshot th:last-child, .prose .holdings-snapshot td:last-child { width: 32%; padding-right: 12px; }
+    .holdings-snapshot .holding-primary { font-size: 12px; }
+    .holdings-snapshot .holding-secondary { font-size: 10px; }
+    .holdings-footer { padding: 12px 14px; font-size: 10px; }
+  }
+  @media print {
+    .prose .holdings-snapshot { break-inside: avoid; box-shadow: none; }
+  }
+}

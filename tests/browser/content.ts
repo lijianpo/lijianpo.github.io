@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import matter from 'gray-matter';
 import { visiblePosts } from '../../src/lib/posts';
 import { postSchema } from '../../src/lib/content-schema';
+import { readHoldingsSync } from '../../src/lib/holdings';
+import { snapshotPerformance } from '../../src/lib/performance';
 
 // Read the current collection so adding articles or removing the starter does not break deployment.
 const contentDir = resolve('src/content/posts');
@@ -19,3 +21,12 @@ export const drafts = entries.filter((post) => post.data.draft);
 export const chinesePost = posts.find((post) => /[\p{Script=Han}]{4,8}/u.test(post.body));
 export const tocPost = posts.find((post) => /^## /m.test(post.body));
 export const codePost = posts.find((post) => /^```/m.test(post.body));
+
+// Same snapshot the article page renders: referenced holding, cut off at pubDate or `until`.
+const holdings = readHoldingsSync();
+export function performanceOf(post: (typeof entries)[number] | undefined) {
+  const ref = post?.data.performance;
+  const holding = ref && holdings.get(ref.holding);
+  return ref && holding ? snapshotPerformance(holding, ref, post.data.pubDate) : null;
+}
+export const performancePost = posts.find((post) => performanceOf(post));

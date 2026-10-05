@@ -1,12 +1,13 @@
 ---
-import type { PerformanceData } from '../lib/content-schema';
+import type { HoldingData } from '../lib/content-schema';
 import { formatReturn, performancePlot } from '../lib/performance';
 
-interface Props { data: PerformanceData; }
+interface Props { data: HoldingData; }
 const { data } = Astro.props;
 const plot = performancePlot(data.points);
 const latest = plot.points.at(-1)!;
 const first = plot.points[0];
+const lastIndex = plot.points.length - 1;
 const displayDate = (date: string) => date.replaceAll('-', '.');
 ---
 
@@ -18,18 +19,19 @@ const displayDate = (date: string) => date.replaceAll('-', '.');
   </figcaption>
   <output class="performance-readout" data-performance-readout aria-live="polite" aria-atomic="true">
     <span data-record-date>{displayDate(latest.date)}</span>
-    <strong data-record-return>{formatReturn(latest.returnPercent)}</strong>
+    <strong data-record-return data-trend={latest.trend}>{formatReturn(latest.returnPercent)}</strong>
   </output>
-  <svg class="performance-plot" viewBox={`0 0 ${plot.width} ${plot.height}`} role="group" aria-label={`${data.label}，${plot.points.length} 个记录日`}>
-    {plot.ticks.map((tick) => <g class:list={['performance-tick', { 'zero-tick': tick.value === 0 }]}>
+  <svg class="performance-plot" viewBox={`0 0 ${plot.width} ${plot.height}`} role="radiogroup" aria-label={`${data.label}，${plot.points.length} 个记录日`}>
+    {plot.ticks.map((tick) => <g class:list={['performance-tick', { 'zero-tick': tick.value === 0 }]} aria-hidden="true">
       <line x1={plot.left} x2={plot.right} y1={tick.y} y2={tick.y} />
       <text x={plot.left - 10} y={tick.y} text-anchor="end" dominant-baseline="middle">{tick.label}</text>
     </g>)}
-    {plot.line && <polyline class="performance-line" points={plot.line} fill="none" />}
+    {plot.line && <polyline class="performance-line" points={plot.line} fill="none" aria-hidden="true" />}
+    {/* Roving tabindex: only the selected point is a Tab stop; arrow keys move between points. */}
     {plot.points.map((point, index) => <g
       class="performance-point" data-performance-point data-date={displayDate(point.date)} data-return={formatReturn(point.returnPercent)}
-      data-selected={index === plot.points.length - 1 ? 'true' : 'false'}
-      tabindex="0" role="button" aria-pressed={index === plot.points.length - 1 ? 'true' : 'false'}
+      data-trend={point.trend} data-selected={index === lastIndex ? 'true' : 'false'}
+      tabindex={index === lastIndex ? '0' : '-1'} role="radio" aria-checked={index === lastIndex ? 'true' : 'false'}
       aria-label={`${displayDate(point.date)}，收益率 ${formatReturn(point.returnPercent)}`}
     >
       <title>{displayDate(point.date)}：{formatReturn(point.returnPercent)}</title>
@@ -37,18 +39,19 @@ const displayDate = (date: string) => date.replaceAll('-', '.');
       <circle class="point-halo" cx={point.x} cy={point.y} r="9" />
       <circle class="point-dot" cx={point.x} cy={point.y} r="4" />
     </g>)}
-    <text class="performance-date" x={first.x} y={plot.bottom + 32} text-anchor={plot.points.length === 1 ? 'middle' : 'start'}>{displayDate(first.date)}</text>
-    {plot.points.length > 1 && <text class="performance-date" x={latest.x} y={plot.bottom + 32} text-anchor="end">{displayDate(latest.date)}</text>}
+    <text class="performance-date" x={first.x} y={plot.bottom + 32} text-anchor={plot.points.length === 1 ? 'middle' : 'start'} aria-hidden="true">{displayDate(first.date)}</text>
+    {plot.points.length > 1 && <text class="performance-date" x={latest.x} y={plot.bottom + 32} text-anchor="end" aria-hidden="true">{displayDate(latest.date)}</text>}
   </svg>
   <p class="performance-note">{plot.points.length === 1
     ? '目前只有 1 个记录日，暂以单点展示；添加后续记录后即可形成曲线。'
-    : '连线连接已记录的数据点，未记录日期不补值。可点选数据点或用左右方向键查看。'}</p>
+    : '连线连接已记录的数据点，未记录日期不补值。可点选数据点，或聚焦后用方向键查看。'}
+    红色为浮盈，绿色为浮亏。</p>
   <details class="performance-records">
     <summary>查看每日记录（{plot.points.length}）</summary>
     <table>
       <caption class="sr-only">{data.label}每日数据</caption>
       <thead><tr><th scope="col">日期</th><th scope="col">收益率</th></tr></thead>
-      <tbody>{plot.points.map((point) => <tr><td>{point.date}</td><td>{formatReturn(point.returnPercent)}</td></tr>)}</tbody>
+      <tbody>{plot.points.map((point) => <tr><td>{point.date}</td><td data-trend={point.trend}>{formatReturn(point.returnPercent)}</td></tr>)}</tbody>
     </table>
   </details>
 </figure>
@@ -58,26 +61,54 @@ const displayDate = (date: string) => date.replaceAll('-', '.');
     const points = [...chart.querySelectorAll<SVGGElement>('[data-performance-point]')];
     const date = chart.querySelector<HTMLElement>('[data-record-date]')!;
     const value = chart.querySelector<HTMLElement>('[data-record-return]')!;
+    let selectedPoint = points.find((point) => point.dataset.selected === 'true')!;
+    let previewPoint: SVGGElement | undefined;
+    const preview = (point?: SVGGElement) => {
+      if (previewPoint) delete previewPoint.dataset.preview;
+      previewPoint = point;
+      if (point) point.dataset.preview = 'true';
+      const record = point ?? selectedPoint;
+      date.textContent = record.dataset.date!;
+      value.textContent = record.dataset.return!;
+      value.dataset.trend = record.dataset.trend!;
+    };
     const select = (point: SVGGElement) => {
-      date.textContent = point.dataset.date!;
-      value.textContent = point.dataset.return!;
+      selectedPoint = point;
+      preview();
       for (const item of points) {
-        item.dataset.selected = String(item === point);
-        item.setAttribute('aria-pressed', String(item === point));
+        const selected = item === point;
+        item.dataset.selected = String(selected);
+        item.setAttribute('aria-checked', String(selected));
+        item.setAttribute('tabindex', selected ? '0' : '-1');
       }
     };
+    const keys: Record<string, (index: number) => number> = {
+      ArrowLeft: (index) => Math.max(0, index - 1),
+      ArrowUp: (index) => Math.max(0, index - 1),
+      ArrowRight: (index) => Math.min(points.length - 1, index + 1),
+      ArrowDown: (index) => Math.min(points.length - 1, index + 1),
+      Home: () => 0,
+      End: () => points.length - 1,
+    };
     points.forEach((point, index) => {
-      for (const event of ['pointerenter', 'click', 'focus']) point.addEventListener(event, () => select(point));
+      // Hover previews a record without moving the keyboard's selection or Tab stop.
+      point.addEventListener('pointerenter', () => preview(point));
+      for (const event of ['pointerleave', 'pointercancel']) point.addEventListener(event, () => {
+        if (previewPoint === point) preview();
+      });
+      point.addEventListener('focus', () => select(point));
+      point.addEventListener('click', () => {
+        select(point);
+        point.focus({ preventScroll: true });
+      });
       point.addEventListener('keydown', (event) => {
-        let target = index;
-        if (event.key === 'ArrowLeft') target = Math.max(0, index - 1);
-        else if (event.key === 'ArrowRight') target = Math.min(points.length - 1, index + 1);
-        else if (event.key === 'Home') target = 0;
-        else if (event.key === 'End') target = points.length - 1;
-        else if (event.key !== 'Enter' && event.key !== ' ') return;
+        if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); select(point); return; }
+        const move = keys[event.key];
+        if (!move) return;
         event.preventDefault();
-        points[target].focus();
-        select(points[target]);
+        const target = points[move(index)];
+        select(target);
+        target.focus();
       });
     });
   }
@@ -100,12 +131,21 @@ const displayDate = (date: string) => date.replaceAll('-', '.');
   .point-target { fill: transparent; }
   .point-halo { fill: var(--blue-soft); opacity: 0; }
   .point-dot { fill: var(--blue); stroke: white; stroke-width: 1.5; }
-  .performance-point[data-selected='true'] .point-halo, .performance-point:focus-visible .point-halo { opacity: 1; }
+  .performance-point[data-selected='true'] .point-halo, .performance-point[data-preview='true'] .point-halo, .performance-point:focus-visible .point-halo { opacity: 1; }
   .performance-point:focus-visible .point-halo { stroke: var(--blue); stroke-width: 2; }
   .performance-chart .performance-note { margin: 12px 0; font-size: 12px; color: var(--muted); line-height: 1.7; }
   .performance-records { border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; }
   .performance-records summary { cursor: pointer; color: var(--blue); }
   .performance-records td:last-child, .performance-records th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  /* A-share convention: gains red, losses green. Signs (+/−) carry the same meaning without color. */
+  .performance-readout strong[data-trend='gain'], .performance-records td[data-trend='gain'] { color: var(--gain); }
+  .performance-readout strong[data-trend='loss'], .performance-records td[data-trend='loss'] { color: var(--loss); }
+  .performance-point[data-trend='gain'] .point-dot { fill: var(--gain); }
+  .performance-point[data-trend='loss'] .point-dot { fill: var(--loss); }
+  .performance-point[data-trend='gain'] .point-halo { fill: var(--gain-soft); }
+  .performance-point[data-trend='loss'] .point-halo { fill: var(--loss-soft); }
+  .performance-point[data-trend='gain']:focus-visible .point-halo { stroke: var(--gain); }
+  .performance-point[data-trend='loss']:focus-visible .point-halo { stroke: var(--loss); }
   @media (max-width: 480px) {
     .performance-chart { padding: 16px 12px; border-radius: 16px; }
     .performance-chart h2 { font-size: 18px; }

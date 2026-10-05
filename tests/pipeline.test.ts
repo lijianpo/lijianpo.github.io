@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { test, type TestContext } from 'node:test';
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink } from 'node:fs/promises';
+import { test } from 'node:test';
+import { readFile, readdir, rename, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -8,27 +8,15 @@ import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import sharp from 'sharp';
-import { writePost } from './fixtures';
+import { sourceTree, writeHolding, writePost } from './fixtures';
 import { attr, documentElements } from '../src/lib/html';
+import { checkContent } from '../src/lib/content-files';
 
 const exec = promisify(execFile);
 
-async function sourceTree(t: TestContext) {
-  // Use an isolated tree: the author's articles and running development server are untouched.
-  await mkdir(resolve('.cache'), { recursive: true });
-  const root = await mkdtemp(resolve('.cache/pipeline-'));
-  t.after(() => rm(root, { recursive: true, force: true }));
-  for (const path of ['src', 'scripts', 'public', 'assets', 'astro.config.mjs', 'package.json', 'tsconfig.json']) {
-    await cp(resolve(path), resolve(root, path), { recursive: true });
-  }
-  await symlink(resolve('node_modules'), resolve(root, 'node_modules'), 'dir');
-  await rm(resolve(root, 'src/content/posts'), { recursive: true });
-  await mkdir(resolve(root, 'src/content/posts'));
-  return root;
-}
-
 test('真实构建刷新未改动 Markdown 的图片尺寸和哈希；删除文章后清理资源并支持空站点', { timeout: 90_000 }, async (t) => {
-  const root = await sourceTree(t);
+  const { root, cleanup } = await sourceTree();
+  t.after(cleanup);
   await writePost(root, 'photo-note', { cover: '/images/photo.jpg' }, '一段测试正文。\n\n## 图片\n\n![照片](/images/photo.jpg)');
   await writePost(root, 'private-draft', { draft: true, cover: '/images/not-ready.jpg' });
   const photo = (width: number, height: number) => sharp({ create: { width, height, channels: 3, background: '#1967d2' } }).jpeg().toFile(resolve(root, 'public/images/photo.jpg'));
@@ -67,7 +55,8 @@ test('真实构建刷新未改动 Markdown 的图片尺寸和哈希；删除文�
 });
 
 test('开发预览中替换图片后自动刷新尺寸和可访问的 WebP 地址', { timeout: 50_000 }, async (t) => {
-  const root = await sourceTree(t);
+  const { root, cleanup } = await sourceTree();
+  t.after(cleanup);
   await writePost(root, 'photo-note', { draft: true }, '![照片](/images/photo.jpg)');
   const photo = (width: number) => sharp({ create: { width, height: 200, channels: 3, background: '#1967d2' } }).jpeg().toFile(resolve(root, 'public/images/photo.jpg'));
   await photo(600);
@@ -113,4 +102,29 @@ test('开发预览中替换图片后自动刷新尺寸和可访问的 WebP 地�
     await exit;
     clearTimeout(kill);
   }
+});
+
+test('真实构建按 YAML 和 YML 文件名引用持仓，额外 slug 不会让收益图消失', { timeout: 45_000 }, async (t) => {
+  const { root, cleanup } = await sourceTree();
+  t.after(cleanup);
+  for (const extension of ['yaml', 'yml']) {
+    const id = `holding-${extension}`;
+    await writeHolding(root, id, {
+      label: '文件名持仓', basis: '测试数据', slug: `ignored-${extension}`,
+      points: [{ date: '2026-09-30', returnPercent: -8.44 }],
+    });
+    if (extension === 'yml') await rename(resolve(root, `src/data/holdings/${id}.yaml`), resolve(root, `src/data/holdings/${id}.yml`));
+    await writePost(root, `note-${extension}`, { performance: id });
+  }
+  await checkContent(root);
+  const build = () => exec(process.execPath, [resolve('node_modules/astro/bin/astro.mjs'), 'build'], { cwd: root, timeout: 25_000 });
+  await build();
+  for (const extension of ['yaml', 'yml']) {
+    const nodes = documentElements(await readFile(resolve(root, `dist/posts/note-${extension}/index.html`), 'utf8'));
+    assert(nodes.some((node) => node.tagName === 'figure' && attr(node, 'aria-label') === '文件名持仓'));
+    assert(nodes.some((node) => attr(node, 'data-date') === '2026.09.30' && attr(node, 'data-return') === '−8.44%'));
+  }
+  await writePost(root, 'slug-note', { performance: 'ignored-yaml' });
+  await assert.rejects(checkContent(root), /找不到持仓文件.*ignored-yaml/);
+  await assert.rejects(build(), /找不到持仓文件.*ignored-yaml/);
 });

@@ -8,6 +8,8 @@ import { site } from '../site.config.ts';
 import { postIdPattern, postSchema, type PostData } from './content-schema.ts';
 import { attr, fragmentElements } from './html.ts';
 import { inspectLocalImage } from './image-assets.ts';
+import { readHoldings } from './holdings.ts';
+import { recordDay, snapshotPerformance } from './performance.ts';
 
 export interface SourcePost { id: string; file: string; body: string; data: PostData; }
 
@@ -47,10 +49,13 @@ export async function readSourcePosts(root = process.cwd()): Promise<SourcePost[
 
 export async function checkContent(root = process.cwd()) {
   const posts = await readSourcePosts(root);
+  // Malformed holding files break every article that uses them, so they always fail.
+  const holdings = await readHoldings(root);
   const warnings: string[] = [];
   const errors: string[] = [];
   const checked = new Map<string, Promise<unknown>>();
   for (const post of posts) {
+    const report = (message: string) => (post.data.draft ? warnings : errors).push(`${post.id}.md: ${message}`);
     const urls = new Set([...imageReferences(post.body), ...(post.data.cover ? [post.data.cover] : [])]);
     for (const url of urls) {
       if (!url.startsWith('/images/')) continue;
@@ -58,7 +63,15 @@ export async function checkContent(root = process.cwd()) {
       if (!check) { check = inspectLocalImage(url, root, true); checked.set(url, check); }
       try { await check; }
       catch (error) {
-        (post.data.draft ? warnings : errors).push(`${post.id}.md: ${url}: ${(error as Error).message}`);
+        report(`${url}: ${(error as Error).message}`);
+      }
+    }
+    const ref = post.data.performance;
+    if (ref) {
+      const holding = holdings.get(ref.holding);
+      if (!holding) report(`performance: 找不到持仓文件 src/data/holdings/${ref.holding}.yaml`);
+      else if (!snapshotPerformance(holding, ref, post.data.pubDate)) {
+        report(`performance: ${ref.holding} 在 ${ref.until ?? recordDay(post.data.pubDate)} 及之前没有收益记录`);
       }
     }
   }

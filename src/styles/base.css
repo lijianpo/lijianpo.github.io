@@ -20,6 +20,10 @@
     --line: #dadce0;
     --blue: #1967d2;
     --blue-soft: #e8f0fe;
+    --gain: #d93025;
+    --gain-soft: #fce8e6;
+    --loss: #188038;
+    --loss-soft: #e6f4ea;
     --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
     --sans: 'Google Sans', 'Segoe UI', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
   }

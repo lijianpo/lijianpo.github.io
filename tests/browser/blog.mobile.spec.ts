@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { first, chinesePost, codePost, tocPost, posts } from './content';
+import { first, chinesePost, codePost, tocPost, posts, performanceOf, performancePost } from './content';
 import { postUrl } from '../../src/lib/posts';
-import { formatReturn } from '../../src/lib/performance';
+import { formatReturn, trendOf } from '../../src/lib/performance';
 
 test('iPhone 上列表与卡片切换后保持偏好，封面和正文正常显示', async ({ page }) => {
   await page.goto('/');
@@ -61,13 +61,16 @@ test('iPhone 无剪贴板权限时选中代码并提示手动复制', async ({ p
 });
 
 test('iPhone 上收益图可触摸选点，并展开每日数据', async ({ page }) => {
-  const post = posts.find((entry) => entry.data.performance);
-  if (!post?.data.performance) { test.skip(true, '没有配置收益记录的文章'); return; }
+  const post = performancePost;
+  const performance = performanceOf(post);
+  if (!post || !performance) { test.skip(true, '没有配置收益记录的文章'); return; }
   await page.goto(postUrl(post.id));
   const chart = page.locator('[data-performance-chart]');
   await chart.locator('[data-performance-point]').first().tap();
-  await expect(chart.locator('[data-record-return]')).toHaveText(formatReturn(post.data.performance.points[0].returnPercent));
+  await expect(chart.locator('[data-record-return]')).toHaveText(formatReturn(performance.points[0].returnPercent));
+  await expect(chart.locator('[data-record-return]')).toHaveAttribute('data-trend', trendOf(performance.points[0].returnPercent));
+  await expect(chart.locator('[data-performance-point]').first()).toHaveAttribute('tabindex', '0');
   await chart.locator('summary').tap();
-  await expect(chart.locator('tbody tr')).toHaveCount(post.data.performance.points.length);
+  await expect(chart.locator('tbody tr')).toHaveCount(performance.points.length);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });

@@ -10,7 +10,8 @@ const recordDate = z.preprocess(
   ),
 );
 
-export const performanceSchema = z.object({
+// One file per position under src/data/holdings/; daily reviews append points here.
+export const holdingSchema = z.object({
   label: z.string().trim().min(1),
   basis: z.string().trim().min(1),
   points: z.array(z.object({ date: recordDate, returnPercent: z.number() })).min(1),
@@ -22,7 +23,18 @@ export const performanceSchema = z.object({
   });
 }).transform((data) => ({ ...data, points: [...data.points].sort((a, b) => a.date.localeCompare(b.date)) }));
 
-export type PerformanceData = z.infer<typeof performanceSchema>;
+export type HoldingData = z.infer<typeof holdingSchema>;
+
+const holdingId = z.string({ error: 'performance 请填写 src/data/holdings/ 下的持仓文件名，例如 performance: haohua' })
+  .trim().regex(postIdPattern, '持仓文件名请使用英文小写字母、数字和短横线');
+
+// Articles reference a holding; the chart shows records up to `until` (default: the article's pubDate).
+export const performanceRefSchema = z.union([
+  holdingId.transform((holding) => ({ holding, until: undefined as string | undefined })),
+  z.strictObject({ holding: holdingId, until: recordDate.optional() }),
+], { error: 'performance 请写成 performance: haohua 或 { holding: haohua, until: YYYY-MM-DD }；收益数据放在 src/data/holdings/haohua.yaml' });
+
+export type PerformanceRef = z.infer<typeof performanceRefSchema>;
 
 export const postSchema = z.object({
   title: z.string().trim().min(1),
@@ -32,7 +44,7 @@ export const postSchema = z.object({
   updatedDate: z.coerce.date().optional(),
   tags: z.array(z.string().trim().min(1)).default([]).transform((tags) => [...new Set(tags)]),
   draft: z.boolean().default(false),
-  performance: performanceSchema.optional(),
+  performance: performanceRefSchema.optional(),
 });
 
 export type PostData = z.infer<typeof postSchema>;

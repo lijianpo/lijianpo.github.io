@@ -4,12 +4,7 @@ description: '复盘2026年9月30日A股市场表现，记录昊华科技500股�
 pubDate: 2026-10-04
 tags: ['投资记录', 'A股', '昊华科技']
 draft: false
-performance:
-  label: '昊华科技持仓收益率'
-  basis: '按每股成本 45.00 元计算的账面浮动收益率，非账户整体收益率。'
-  points:
-    - date: 2026-09-30
-      returnPercent: -8.44
+performance: haohua
 ---
 
 2026 年 9 月 30 日，是国庆假期前最后一个交易日。A 股于 10 月 1 日至 7 日休市，10 月 8 日恢复交易。这篇记录以 9 月 30 日收盘为基准，回顾当天行情，也整理一下自己的持仓情况。[上交所休市安排](https://www.sse.com.cn/disclosure/announcement/general/c/c_20260915_10832273.shtml)
@@ -22,15 +17,22 @@ performance:
 
 昊华科技当天收于 **41.20 元，下跌 1.32%**，成交额约 7.71 亿元，换手率为 1.73%。按照收盘价计算，这笔持仓仍处于浮亏状态。[昊华科技当日行情](https://4g.stockstar.com/detail/RB2026093000032194)
 
-| 项目 | 数据 |
-|---|---:|
-| 持仓数量 | 500 股 |
-| 每股成本 | 45.00 元 |
-| 持仓成本合计 | 22,500.00 元 |
-| 9 月 30 日收盘价 | 41.20 元 |
-| 收盘持仓市值 | 20,600.00 元 |
-| 账面浮动盈亏 | **−1,900.00 元** |
-| 相对成本收益率 | **−8.44%** |
+<figure class="holdings-snapshot" aria-label="2026 年 9 月 30 日昊华科技持仓快照">
+<figcaption class="holdings-caption"><span class="holdings-title">持仓</span><time datetime="2026-09-30">2026.09.30 · 收盘</time></figcaption>
+<dl class="holdings-summary">
+<div class="holdings-market-value"><dt>持仓市值（元）</dt><dd>20,600.00</dd></div>
+<div data-trend="loss"><dt>浮动盈亏（元）</dt><dd>−1,900.00</dd></div>
+<div data-trend="loss"><dt>持仓收益率</dt><dd>−8.44<span class="holdings-percent">%</span></dd></div>
+</dl>
+<div class="holdings-table">
+
+| 证券 | 持仓 | 现价 / 成本 | 浮动盈亏 |
+|:---|---:|---:|---:|
+| <span class="holding-primary">昊华科技</span><span class="holding-secondary">600378</span> | <span class="holding-primary">500 股</span><span class="holding-secondary">持有</span> | <span class="holding-primary">41.20</span><span class="holding-secondary">45.00</span> | <span class="holding-primary" data-trend="loss">−1,900.00</span><span class="holding-secondary" data-trend="loss">−8.44%</span> |
+
+</div>
+<div class="holdings-footer"><span>持仓成本合计 <b>22,500.00 元</b></span><span>单笔持仓 · 按收盘价计算</span></div>
+</figure>
 
 计算方式很直接：每股相对成本亏损 3.80 元，乘以 500 股，账面浮亏为 1900 元；再除以 22500 元的持仓成本，得到约 8.44% 的浮亏比例。
 
